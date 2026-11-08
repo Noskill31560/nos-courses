@@ -478,10 +478,17 @@ async function doImport() {
     const set = (id, v) => { if (v) $(id).value = v; };
     set("#fName", d.name); set("#fDate", d.date); set("#fClose", d.signup_close); set("#fLoc", d.location);
     set("#fSignup", d.signup_url); set("#fUrl", d.url || url); set("#fNotes", d.notes);
-    if (d.formats?.length) { draftFormats = d.formats.map((f, i) => ({ ...f, id: f.id || "f" + (i + 1) })); renderFmtEditor(); }
+    // courses enfants retirées par défaut (libellé « enfant », « kids », catégories jeunes, ou moins de 2 km)
+    const KIDS = /enfant|kid|junior|jeune|poussin|benjamin|minime|cadet|[ée]veil|baby|bambin|mini[- ]?(course|foul|corrida)|famille/i;
+    const all = d.formats || [];
+    const kept = all.filter(f => !(KIDS.test(f.label || "") || (f.distance && f.distance < 2)));
+    const removed = all.length - kept.length;
+    if (kept.length) { draftFormats = kept.map((f, i) => ({ ...f, id: f.id || "f" + (i + 1) })); renderFmtEditor(); }
+    d.formats = kept;
     const missing = [!d.date && "date", !d.formats?.length && "formats", !d.signup_url && "lien d'inscription"].filter(Boolean);
     hint.className = "hint ok";
-    hint.textContent = "✓ Infos récupérées" + (missing.length ? ` (à compléter : ${missing.join(", ")})` : ". Vérifie puis enregistre.");
+    hint.textContent = "✓ Infos récupérées" + (d.source === "ia" ? " par l'IA" : "") + (removed ? ` · ${removed} course${removed > 1 ? "s" : ""} enfants retirée${removed > 1 ? "s" : ""}` : "") + (missing.length ? ` (à compléter : ${missing.join(", ")})` : ". Vérifie puis enregistre.")
+      + (d.ai_error ? ` · IA non utilisée : ${d.ai_error}` : "");
   } catch (e) {
     hint.className = "hint err"; hint.textContent = e.message;
     if (!$("#fUrl").value) $("#fUrl").value = url;
