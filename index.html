@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nos Courses</title>
+<meta name="theme-color" content="#14213D">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+  :root{
+    --ink:#14213D; --ink2:#3d4a66; --mute:#7a8399; --line:#e6e8ee;
+    --bg:#F4F2EE; --card:#fff; --accent:#FF5A1F; --accent-soft:#FFE7DD;
+    --green:#1E9E63; --green-soft:#DDF4E8; --amber:#C77700; --amber-soft:#FFF1D6;
+    --radius:16px; --shadow:0 1px 2px rgba(20,33,61,.06),0 4px 14px rgba(20,33,61,.06);
+    --display:"Barlow Condensed",system-ui,sans-serif; --body:"Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 var(--body)}
+  button,input,textarea,select{font:inherit;color:inherit}
+  button{cursor:pointer}
+  a{color:inherit}
+
+  header{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff;
+    padding:calc(env(safe-area-inset-top) + 14px) 18px 0}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  h1{font:800 28px/1 var(--display);letter-spacing:.5px;text-transform:uppercase;margin:0}
+  h1 span{color:var(--accent)}
+  .me{background:rgba(255,255,255,.12);border:0;border-radius:999px;padding:6px 12px 6px 6px;
+    display:flex;align-items:center;gap:8px;color:#fff;font-weight:500;font-size:14px}
+  .tabs{display:flex;gap:4px;margin-top:14px}
+  .tab{flex:1;background:none;border:0;color:rgba(255,255,255,.6);padding:10px 0 12px;white-space:nowrap;
+    font:700 14px var(--display);text-transform:uppercase;letter-spacing:.6px;border-bottom:3px solid transparent}
+  .tab.on{color:#fff;border-color:var(--accent)}
+  .tab small{font:600 11px var(--body);background:rgba(255,255,255,.15);border-radius:999px;padding:1px 6px;margin-left:4px;vertical-align:2px}
+
+  main{padding:16px 14px 110px;max-width:680px;margin:0 auto}
+  .banner{background:var(--amber-soft);color:#7a4a00;border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+  .month{font:700 13px var(--display);letter-spacing:1.2px;text-transform:uppercase;color:var(--mute);margin:22px 4px 8px}
+  .month:first-child{margin-top:4px}
+
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+  .card-head{display:flex;gap:14px;padding:14px 14px 10px}
+  .dateblk{flex:none;width:54px;text-align:center;border-radius:12px;background:var(--ink);color:#fff;padding:6px 0 7px}
+  .dateblk b{display:block;font:800 26px/1 var(--display)}
+  .dateblk i{display:block;font:700 12px/1.2 var(--display);text-transform:uppercase;letter-spacing:.8px;font-style:normal;color:var(--accent)}
+  .dateblk em{display:block;font:500 10px var(--body);font-style:normal;opacity:.7;text-transform:capitalize}
+  .title{flex:1;min-width:0}
+  .title h2{font:700 21px/1.1 var(--display);text-transform:uppercase;margin:0 0 3px;letter-spacing:.3px}
+  .sub{color:var(--mute);font-size:13px;display:flex;flex-wrap:wrap;gap:4px 10px}
+  .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+  .badge{font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 8px;background:#eef0f4;color:var(--ink2)}
+  .badge.hot{background:var(--accent-soft);color:#b8380a}
+  .badge.warn{background:var(--amber-soft);color:var(--amber)}
+  .badge.closed{background:#f0f0f0;color:#999;text-decoration:line-through}
+  .card-head{cursor:pointer}
+  .chev{flex:none;align-self:center;color:var(--mute);font-size:14px;transition:transform .2s}
+  .card.open .chev{transform:rotate(180deg)}
+  .card:not(.open) .body{display:none}
+  .dists{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+  .dist{font:700 13px/1 var(--display);letter-spacing:.3px;border:1.5px solid var(--line);border-radius:8px;padding:4px 7px;color:var(--ink)}
+  .dist.me-int{border-color:var(--ink2);background:#eef0f4}
+  .dist.me-ins{border-color:var(--green);background:var(--green);color:#fff}
+  .more{background:none;border:0;color:var(--mute);font-size:20px;line-height:1;padding:2px 4px;align-self:flex-start}
+
+  .formats{border-top:1px solid var(--line)}
+  .fmt{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
+  .fmt:last-child{border-bottom:0}
+  .fmt-main{flex:1;min-width:0}
+  .fmt-name{font-weight:600}
+  .fmt-meta{color:var(--mute);font-size:12.5px}
+  .fmt-meta b{color:var(--ink);font-weight:600}
+  .people{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+  .chip{font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 8px 2px 3px;display:inline-flex;align-items:center;gap:4px;background:#f1f2f5}
+  .chip .av{width:16px;height:16px;font-size:9px}
+  .chip.ins{background:var(--green-soft);color:#11603c}
+  .chip.int{background:#eef0f4;color:var(--ink2)}
+  .av{border-radius:50%;display:inline-grid;place-items:center;color:#fff;font-weight:700;width:26px;height:26px;font-size:12px;flex:none}
+  .join{flex:none;border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:6px 9px;font-size:12.5px;font-weight:600;color:var(--ink2);min-width:92px}
+  .join.int{border-color:var(--ink2);background:#eef0f4;color:var(--ink)}
+  .join.ins{border-color:var(--green);background:var(--green);color:#fff}
+
+  .actions{display:flex;gap:8px;padding:10px 14px 14px;flex-wrap:wrap}
+  .btn{border:0;border-radius:11px;padding:10px 14px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px;text-decoration:none;background:#eef0f4;color:var(--ink)}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.dark{background:var(--ink);color:#fff}
+  .btn.ghost{background:none;color:var(--ink2);padding:10px 8px}
+  .btn:disabled{opacity:.5}
+  .notes{padding:0 14px 4px;color:var(--ink2);font-size:13px;white-space:pre-wrap}
+
+  .empty{text-align:center;color:var(--mute);padding:50px 20px}
+  .empty b{display:block;font:700 22px var(--display);text-transform:uppercase;color:var(--ink);margin-bottom:6px}
+
+  .fab{position:fixed;right:18px;bottom:calc(env(safe-area-inset-bottom) + 18px);z-index:6;border:0;
+    background:var(--accent);color:#fff;border-radius:999px;padding:15px 20px 15px 16px;font:700 17px var(--display);
+    text-transform:uppercase;letter-spacing:.6px;box-shadow:0 6px 20px rgba(255,90,31,.45);display:flex;align-items:center;gap:6px}
+  .fab span{font-size:24px;line-height:0}
+
+  /* feuilles modales */
+  .sheet-bg{position:fixed;inset:0;background:rgba(20,33,61,.45);z-index:10;display:none;align-items:flex-end;justify-content:center}
+  .sheet-bg.open{display:flex}
+  .sheet{background:#fff;width:100%;max-width:680px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;
+    padding:8px 18px calc(env(safe-area-inset-bottom) + 18px);animation:up .22s ease}
+  @keyframes up{from{transform:translateY(40px);opacity:.5}}
+  .grip{width:40px;height:4px;background:#d9dce3;border-radius:4px;margin:4px auto 10px}
+  .sheet h3{font:800 24px var(--display);text-transform:uppercase;margin:4px 0 12px}
+  label{display:block;font-size:12.5px;font-weight:600;color:var(--ink2);margin:12px 0 4px}
+  input,textarea,select{width:100%;border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;background:#fff;outline:none}
+  input:focus,textarea:focus{border-color:var(--ink)}
+  .row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
+  .import{background:var(--bg);border-radius:14px;padding:12px}
+  .import .row{align-items:center}
+  .hint{font-size:12px;color:var(--mute);margin-top:6px}
+  .hint.ok{color:var(--green)} .hint.err{color:#c0392b}
+  .fmt-edit{border:1.5px solid var(--line);border-radius:12px;padding:8px 10px 10px;margin-bottom:8px;position:relative}
+  .fmt-edit label{margin:6px 0 2px;font-size:11px}
+  .fmt-edit input{padding:7px 9px}
+  .fmt-edit .del{position:absolute;top:4px;right:6px;background:none;border:0;color:var(--mute);font-size:18px}
+  .sheet-actions{display:flex;gap:10px;margin-top:18px}.sheet-actions .btn{flex:1;justify-content:center;padding:13px}
+  .menu-item{display:block;width:100%;text-align:left;border:0;background:none;padding:14px 4px;border-bottom:1px solid var(--line);font-weight:500}
+  .menu-item.danger{color:#c0392b}
+  .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:r .7s linear infinite;display:inline-block}
+  @keyframes r{to{transform:rotate(360deg)}}
+  .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;z-index:20;opacity:0;transition:.25s;pointer-events:none}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="top">
+    <h1 id="appTitle">Nos <span>Courses</span></h1>
+    <button class="me" id="meBtn"></button>
+  </div>
+  <nav class="tabs">
+    <button class="tab on" data-tab="upcoming">À venir</button>
+    <button class="tab" data-tab="mine">Mes courses</button>
+    <button class="tab" data-tab="past">Passées</button>
+  </nav>
+</header>
+
+<main id="list"></main>
+
+<button class="fab" id="addBtn"><span>+</span> Course</button>
+
+<div class="sheet-bg" id="sheetBg"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================== Configuration & stockage ================== */
+const CFG = window.APP_CONFIG || {};
+const ONLINE = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
+const LS = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} },
+};
+
+const api = ONLINE ? (() => {
+  const base = CFG.SUPABASE_URL.replace(/\/$/, "");
+  const H = { apikey: CFG.SUPABASE_ANON_KEY, Authorization: `Bearer ${CFG.SUPABASE_ANON_KEY}`, "Content-Type": "application/json" };
+  const req = async (path, opt = {}) => {
+    const r = await fetch(`${base}/rest/v1/${path}`, { ...opt, headers: { ...H, ...(opt.headers || {}) } });
+    if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+    return r.status === 204 ? null : r.json().catch(() => null);
+  };
+  return {
+    async load() {
+      const [races, parts] = await Promise.all([req("races?select=*&order=date.asc"), req("participations?select=*")]);
+      return { races, parts };
+    },
+    saveRace: (r) => r.id
+      ? req(`races?id=eq.${r.id}`, { method: "PATCH", body: JSON.stringify(strip(r)), headers: { Prefer: "return=representation" } })
+      : req("races", { method: "POST", body: JSON.stringify(strip(r)), headers: { Prefer: "return=representation" } }),
+    deleteRace: (id) => req(`races?id=eq.${id}`, { method: "DELETE" }),
+    setPart: (p) => req("participations?on_conflict=race_id,member", { method: "POST", body: JSON.stringify({ ...p, updated_at: new Date().toISOString() }), headers: { Prefer: "resolution=merge-duplicates" } }),
+    delPart: (race_id, member) => req(`participations?race_id=eq.${race_id}&member=eq.${encodeURIComponent(member)}`, { method: "DELETE" }),
+    async importUrl(url) {
+      const r = await fetch(`${base}/functions/v1/import-race`, { method: "POST", headers: H, body: JSON.stringify({ url }) });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || data.error) throw new Error(data.error || `Erreur ${r.status}`);
+      return data;
+    },
+  };
+})() : (() => {
+  // Mode démo : tout reste sur cet appareil
+  const db = () => LS.get("demo-db", null) || seedDemo();
+  const save = (d) => LS.set("demo-db", d);
+  return {
+    async load() { return db() },
+    async saveRace(r) { const d = db(); if (r.id) d.races = d.races.map(x => x.id === r.id ? { ...x, ...r } : x); else d.races.push({ ...r, id: crypto.randomUUID() }); save(d); },
+    async deleteRace(id) { const d = db(); d.races = d.races.filter(x => x.id !== id); d.parts = d.parts.filter(p => p.race_id !== id); save(d); },
+    async setPart(p) { const d = db(); d.parts = d.parts.filter(x => !(x.race_id === p.race_id && x.member === p.member)); d.parts.push(p); save(d); },
+    async delPart(race_id, member) { const d = db(); d.parts = d.parts.filter(x => !(x.race_id === race_id && x.member === member)); save(d); },
+    async importUrl() { throw new Error("Remplissage automatique disponible une fois Supabase configuré (voir README).") },
+  };
+})();
+
+function strip(r) { const { id, created_at, ...rest } = r; return rest; }
+
+function seedDemo() {
+  const d = {
+    races: [
+      { id: "demo1", name: "La Ronde de Ramonville", location: "Ramonville-Saint-Agne (31)", date: "2026-12-13",
+        url: "https://chrono-start.com/events/ronde-de-ramonville/", signup_url: "https://chrono-start.fr/Inscription/Course/detail/c/5548",
+        signup_close: null, notes: "Tarifs : 11 € à 14 € (hors commission). Retrait dossards samedi 10h-17h.",
+        formats: [{ id: "f1", label: "5 km", distance: 5, price: 11, time: "09h15" }, { id: "f2", label: "10 km", distance: 10, price: 14, time: "10h10" }] },
+    ],
+    parts: [{ race_id: "demo1", member: "Exemple", format_id: "f2", status: "inscrit" }],
+  };
+  LS.set("demo-db", d);
+  return d;
+}
+
+/* ================== État ================== */
+let S = { races: [], parts: [], tab: "upcoming", open: new Set(), me: LS.get("me", "") };
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const today = () => new Date(new Date().toDateString());
+const parseD = (s) => s ? new Date(s + "T00:00:00") : null;
+const days = (s) => Math.round((parseD(s) - today()) / 864e5);
+const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+const fmtNum = (n) => String(n).replace(".", ",");
+const COLORS = ["#FF5A1F", "#2D6CDF", "#1E9E63", "#9B51E0", "#E0B000", "#D6336C", "#0FA3B1", "#6C757D", "#F08C00", "#5C7CFA", "#2B8A3E", "#C2255C"];
+const colorOf = (name) => COLORS[[...name].reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length];
+const initials = (n) => n.trim().split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
+const avatar = (n) => `<span class="av" style="background:${colorOf(n)}">${esc(initials(n))}</span>`;
+
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2200); }
+
+async function refresh(silent) {
+  try {
+    const d = await api.load();
+    S.races = d.races || []; S.parts = d.parts || [];
+    render();
+  } catch (e) { if (!silent) toast("Connexion impossible : " + e.message.slice(0, 60)); console.error(e); }
+}
+
+/* ================== Rendu ================== */
+function render() {
+  const t = CFG.GROUP_NAME || "Nos Courses";
+  const words = t.split(" ");
+  $("#appTitle").innerHTML = words.length > 1 ? `${esc(words.slice(0, -1).join(" "))} <span>${esc(words.at(-1))}</span>` : esc(t);
+  document.title = t;
+  $("#meBtn").innerHTML = S.me ? `${avatar(S.me)}${esc(S.me)}` : "Qui es-tu ?";
+
+  const myRaceIds = new Set(S.parts.filter(p => p.member === S.me).map(p => p.race_id));
+  const upcoming = S.races.filter(r => days(r.date) >= 0).sort((a, b) => a.date.localeCompare(b.date));
+  const past = S.races.filter(r => days(r.date) < 0).sort((a, b) => b.date.localeCompare(a.date));
+  const mine = upcoming.filter(r => myRaceIds.has(r.id));
+  const counts = { upcoming: upcoming.length, mine: mine.length, past: past.length };
+  document.querySelectorAll(".tab").forEach(b => {
+    b.classList.toggle("on", b.dataset.tab === S.tab);
+    b.innerHTML = b.textContent.replace(/\d+$/, "").trim() + (counts[b.dataset.tab] ? `<small>${counts[b.dataset.tab]}</small>` : "");
+  });
+
+  const list = { upcoming, mine, past }[S.tab];
+  let html = ONLINE ? "" : `<div class="banner">Mode démo : les données restent sur ce téléphone. Renseigne <b>config.js</b> pour partager avec le groupe.</div>`;
+  if (!list.length) {
+    html += S.tab === "mine"
+      ? `<div class="empty"><b>Aucune course pour toi</b>Appuie sur « Je suis chaud » ou « Inscrit » sur une course.</div>`
+      : S.tab === "past" ? `<div class="empty"><b>Rien pour l'instant</b>Les courses terminées apparaîtront ici.</div>`
+      : `<div class="empty"><b>Aucune course prévue</b>Colle le lien d'une course avec le bouton « + Course ».</div>`;
+  }
+  let lastMonth = "";
+  for (const r of list) {
+    const d = parseD(r.date);
+    const m = d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+    if (m !== lastMonth) { html += `<div class="month">${m}</div>`; lastMonth = m; }
+    html += card(r);
+  }
+  $("#list").innerHTML = html;
+}
+
+function card(r) {
+  const d = parseD(r.date), n = days(r.date);
+  const parts = S.parts.filter(p => p.race_id === r.id);
+  const badges = [];
+  if (n >= 0) badges.push(`<span class="badge ${n <= 14 ? "hot" : ""}">${n === 0 ? "Aujourd'hui !" : n === 1 ? "Demain" : "J-" + n}</span>`);
+  if (r.signup_close && n >= 0) {
+    const c = days(r.signup_close);
+    if (c < 0) badges.push(`<span class="badge closed">Inscriptions closes</span>`);
+    else badges.push(`<span class="badge ${c <= 10 ? "warn" : ""}">Clôture ${c === 0 ? "aujourd'hui" : "dans " + c + " j"}</span>`);
+  }
+  const nIns = parts.filter(p => p.status === "inscrit").length, nInt = parts.length - nIns;
+  if (parts.length) badges.push(`<span class="badge">${nIns ? nIns + " inscrit" + (nIns > 1 ? "s" : "") : ""}${nIns && nInt ? " · " : ""}${nInt ? nInt + " chaud" + (nInt > 1 ? "s" : "") : ""}</span>`);
+
+  const myPart = parts.find(p => p.member === S.me);
+  const dists = (r.formats || []).map(f => {
+    const txt = f.distance ? (f.distance >= 1 ? `${fmtNum(f.distance)} km` : `${Math.round(f.distance * 1000)} m`) : f.label;
+    const st = myPart?.format_id === f.id ? (myPart.status === "inscrit" ? "me-ins" : "me-int") : "";
+    return `<span class="dist ${st}">${esc(txt)}${f.elevation ? ` <small style="font-weight:600;opacity:.7">${f.elevation} D+</small>` : ""}</span>`;
+  }).join("");
+  const fmts = (r.formats?.length ? r.formats : [{ id: "_", label: "Course" }]).map(f => {
+    const ps = parts.filter(p => p.format_id === f.id);
+    const mine = ps.find(p => p.member === S.me);
+    const meta = [
+      f.distance && !String(f.label).replace(",", ".").includes(String(f.distance)) ? `<b>${fmtNum(f.distance)} km</b>` : "",
+      f.elevation ? `${f.elevation} m D+` : "",
+      f.price != null && f.price !== "" ? `<b>${fmtNum(f.price)} €</b>` : "",
+      f.time ? `départ ${esc(f.time)}` : "",
+    ].filter(Boolean).join(" · ");
+    const chips = ps.sort((a, b) => (a.status < b.status ? 1 : -1)).map(p =>
+      `<span class="chip ${p.status === "inscrit" ? "ins" : "int"}">${avatar(p.member)}${esc(p.member)}${p.status === "inscrit" ? " ✓" : ""}</span>`).join("");
+    const st = mine?.status;
+    const joinLbl = st === "inscrit" ? "Inscrit ✓" : st === "interesse" ? "Chaud 🔥" : "Je suis chaud";
+    return `<div class="fmt">
+      <div class="fmt-main"><div class="fmt-name">${esc(f.label)}</div>${meta ? `<div class="fmt-meta">${meta}</div>` : ""}
+      ${chips ? `<div class="people">${chips}</div>` : ""}</div>
+      ${n >= 0 ? `<button class="join ${st === "inscrit" ? "ins" : st === "interesse" ? "int" : ""}" data-join="${r.id}|${esc(f.id)}">${joinLbl}</button>` : ""}
+    </div>`;
+  }).join("");
+
+  return `<article class="card ${S.open.has(r.id) ? "open" : ""}">
+    <div class="card-head" data-toggle="${r.id}">
+      <div class="dateblk"><b>${d.getDate()}</b><i>${MOIS[d.getMonth()]}</i><em>${d.toLocaleDateString("fr-FR", { weekday: "short" })}</em></div>
+      <div class="title"><h2>${esc(r.name)}</h2>
+        <div class="sub">${r.location ? `<span>📍 ${esc(r.location)}</span>` : ""}</div>
+        ${dists ? `<div class="dists">${dists}</div>` : ""}
+        <div class="badges">${badges.join("")}</div></div>
+      <span class="chev">▼</span>
+    </div>
+    <div class="body">
+    ${r.notes ? `<div class="notes">${esc(r.notes)}</div>` : ""}
+    <div class="formats">${fmts}</div>
+    <div class="actions">
+      ${r.signup_url ? `<a class="btn primary" href="${esc(r.signup_url)}" target="_blank" rel="noopener">S'inscrire ↗</a>` : ""}
+      ${r.url ? `<a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">Site</a>` : ""}
+      <button class="btn ghost" data-ics="${r.id}">📅 Agenda</button>
+    </div>
+    <div style="padding:0 14px 12px;text-align:right"><button class="btn ghost" data-menu="${r.id}" style="font-size:13px">⋯ Modifier / partager</button></div>
+    </div>
+  </article>`;
+}
+
+/* ================== Actions ================== */
+document.addEventListener("click", async (e) => {
+  const t = e.target.closest("[data-tab],[data-join],[data-menu],[data-ics],[data-toggle]");
+  if (!t) return;
+  if (t.dataset.toggle) { const id = t.dataset.toggle; S.open.has(id) ? S.open.delete(id) : S.open.add(id); t.closest(".card").classList.toggle("open"); return; }
+  if (t.dataset.tab) { S.tab = t.dataset.tab; render(); scrollTo(0, 0); }
+  if (t.dataset.join) toggleJoin(...t.dataset.join.split("|"));
+  if (t.dataset.menu) openMenu(t.dataset.menu);
+  if (t.dataset.ics) downloadIcs(S.races.find(r => r.id === t.dataset.ics));
+});
+
+async function toggleJoin(raceId, formatId) {
+  if (!S.me) return askName(() => toggleJoin(raceId, formatId));
+  const cur = S.parts.find(p => p.race_id === raceId && p.member === S.me);
+  // cycle : rien → chaud → inscrit → rien (changer de format repart à « chaud »)
+  let next = "interesse";
+  if (cur && cur.format_id === formatId) next = cur.status === "interesse" ? "inscrit" : null;
+  S.parts = S.parts.filter(p => !(p.race_id === raceId && p.member === S.me));
+  if (next) S.parts.push({ race_id: raceId, member: S.me, format_id: formatId, status: next });
+  render();
+  try {
+    if (next) await api.setPart({ race_id: raceId, member: S.me, format_id: formatId, status: next });
+    else await api.delPart(raceId, S.me);
+    if (next === "inscrit") toast("Inscrit, bonne course ! 🏃");
+  } catch (err) { toast("Non enregistré : " + err.message.slice(0, 50)); refresh(true); }
+}
+
+/* ---------- feuilles ---------- */
+function openSheet(html) { $("#sheet").innerHTML = `<div class="grip"></div>` + html; $("#sheetBg").classList.add("open"); }
+function closeSheet() { $("#sheetBg").classList.remove("open"); }
+$("#sheetBg").addEventListener("click", (e) => { if (e.target.id === "sheetBg") closeSheet(); });
+
+function askName(then) {
+  openSheet(`<h3>Qui es-tu ?</h3>
+    <p class="hint" style="margin-top:-6px">Ton prénom s'affichera sur les courses que tu suis. Prenez chacun un prénom différent 😉</p>
+    <label>Prénom</label><input id="nameIn" value="${esc(S.me)}" placeholder="ex. Loïc" autocomplete="given-name">
+    <div class="sheet-actions"><button class="btn primary" id="nameOk">Valider</button></div>`);
+  const ok = async () => {
+    const v = $("#nameIn").value.trim();
+    if (!v) return;
+    const old = S.me;
+    S.me = v; LS.set("me", v); closeSheet(); render();
+    // renommage : on transfère les participations existantes
+    if (old && old !== v) for (const p of S.parts.filter(p => p.member === old)) {
+      try { await api.delPart(p.race_id, old); await api.setPart({ ...p, member: v }); } catch {}
+    }
+    if (old !== v) refresh(true);
+    then && then();
+  };
+  $("#nameOk").onclick = ok;
+  $("#nameIn").onkeydown = (e) => e.key === "Enter" && ok();
+  setTimeout(() => $("#nameIn").focus(), 250);
+}
+$("#meBtn").onclick = () => askName();
+
+function openMenu(id) {
+  const r = S.races.find(x => x.id === id);
+  openSheet(`<h3>${esc(r.name)}</h3>
+    <button class="menu-item" id="mEdit">✏️ Modifier la course</button>
+    <button class="menu-item" id="mShare">📤 Partager</button>
+    <button class="menu-item danger" id="mDel">🗑️ Supprimer</button>`);
+  $("#mEdit").onclick = () => openEditor(r);
+  $("#mShare").onclick = async () => {
+    const txt = `${r.name} – ${parseD(r.date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}${r.signup_url ? "\nInscription : " + r.signup_url : ""}`;
+    closeSheet();
+    if (navigator.share) navigator.share({ title: r.name, text: txt, url: r.url || r.signup_url || undefined }).catch(() => {});
+    else { navigator.clipboard?.writeText(txt); toast("Copié !"); }
+  };
+  $("#mDel").onclick = async () => {
+    if (!confirm(`Supprimer « ${r.name} » pour tout le groupe ?`)) return;
+    closeSheet();
+    S.races = S.races.filter(x => x.id !== id); render();
+    try { await api.deleteRace(id); toast("Course supprimée"); } catch (e) { toast("Erreur : " + e.message.slice(0, 50)); refresh(true); }
+  };
+}
+
+/* ---------- ajout / édition ---------- */
+let draftFormats = [];
+function openEditor(r = null, autoUrl = "") {
+  r = r || { name: "", date: "", location: "", url: autoUrl, signup_url: "", signup_close: "", notes: "", formats: [] };
+  draftFormats = JSON.parse(JSON.stringify(r.formats || []));
+  openSheet(`<h3>${r.id ? "Modifier" : "Nouvelle course"}</h3>
+    ${r.id ? "" : `<div class="import">
+      <label style="margin-top:0">Lien de la course</label>
+      <div class="row"><input id="fUrlImp" type="url" inputmode="url" placeholder="Colle le lien de la page de la course" value="${esc(autoUrl)}">
+      <button class="btn dark" id="impBtn" style="flex:none">Remplir</button></div>
+      <div class="hint" id="impHint">Les infos sont récupérées automatiquement. Vérifie-les avant d'enregistrer.</div>
+    </div>`}
+    <label>Nom *</label><input id="fName" value="${esc(r.name)}">
+    <div class="row"><div><label>Date *</label><input id="fDate" type="date" value="${esc(r.date)}"></div>
+      <div><label>Clôture inscriptions</label><input id="fClose" type="date" value="${esc(r.signup_close || "")}"></div></div>
+    <label>Lieu</label><input id="fLoc" value="${esc(r.location || "")}">
+    <label>Lien d'inscription</label><input id="fSignup" type="url" value="${esc(r.signup_url || "")}">
+    <label>Page de la course</label><input id="fUrl" type="url" value="${esc(r.url || "")}">
+    <label>Formats</label><div id="fmtList"></div>
+    <button class="btn" id="addFmt" style="width:100%;justify-content:center">+ Ajouter un format</button>
+    <label>Notes</label><textarea id="fNotes" rows="2" placeholder="Retrait des dossards, covoiturage…">${esc(r.notes || "")}</textarea>
+    <div class="sheet-actions"><button class="btn" id="cancel">Annuler</button><button class="btn primary" id="saveBtn">Enregistrer</button></div>`);
+  renderFmtEditor();
+  $("#addFmt").onclick = () => { syncFmts(); draftFormats.push({ id: "f" + Date.now().toString(36), label: "" }); renderFmtEditor(); };
+  $("#cancel").onclick = closeSheet;
+  $("#saveBtn").onclick = () => saveRace(r);
+  if (!r.id) {
+    $("#impBtn").onclick = () => doImport();
+    if (autoUrl) doImport();
+  }
+}
+
+function renderFmtEditor() {
+  $("#fmtList").innerHTML = draftFormats.map((f, i) => `<div class="fmt-edit" data-i="${i}">
+    <button class="del" data-del="${i}" aria-label="Retirer">×</button>
+    <div class="row"><div style="flex:2"><label>Nom</label><input data-k="label" value="${esc(f.label)}" placeholder="ex. Trail 25 km"></div>
+      <div><label>Heure</label><input data-k="time" value="${esc(f.time || "")}" placeholder="9h30"></div></div>
+    <div class="row"><div><label>Distance (km)</label><input data-k="distance" inputmode="decimal" value="${f.distance ?? ""}"></div>
+      <div><label>D+ (m)</label><input data-k="elevation" inputmode="numeric" value="${f.elevation ?? ""}"></div>
+      <div><label>Prix (€)</label><input data-k="price" inputmode="decimal" value="${f.price ?? ""}"></div></div>
+  </div>`).join("");
+  document.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { syncFmts(); draftFormats.splice(+b.dataset.del, 1); renderFmtEditor(); });
+}
+function syncFmts() {
+  document.querySelectorAll(".fmt-edit").forEach(el => {
+    const f = draftFormats[+el.dataset.i];
+    el.querySelectorAll("[data-k]").forEach(inp => {
+      const k = inp.dataset.k, v = inp.value.trim();
+      f[k] = ["distance", "elevation", "price"].includes(k) ? (v === "" ? null : parseFloat(v.replace(",", "."))) : v;
+    });
+  });
+}
+
+async function doImport() {
+  const url = $("#fUrlImp").value.trim();
+  const hint = $("#impHint"), btn = $("#impBtn");
+  if (!/^https?:\/\//.test(url)) { hint.className = "hint err"; hint.textContent = "Colle un lien qui commence par https://"; return; }
+  btn.disabled = true; btn.innerHTML = `<span class="spin"></span>`;
+  hint.className = "hint"; hint.textContent = "Lecture de la page…";
+  try {
+    const d = await api.importUrl(url);
+    const set = (id, v) => { if (v) $(id).value = v; };
+    set("#fName", d.name); set("#fDate", d.date); set("#fClose", d.signup_close); set("#fLoc", d.location);
+    set("#fSignup", d.signup_url); set("#fUrl", d.url || url); set("#fNotes", d.notes);
+    if (d.formats?.length) { draftFormats = d.formats.map((f, i) => ({ ...f, id: f.id || "f" + (i + 1) })); renderFmtEditor(); }
+    const missing = [!d.date && "date", !d.formats?.length && "formats", !d.signup_url && "lien d'inscription"].filter(Boolean);
+    hint.className = "hint ok";
+    hint.textContent = "✓ Infos récupérées" + (missing.length ? ` (à compléter : ${missing.join(", ")})` : ". Vérifie puis enregistre.");
+  } catch (e) {
+    hint.className = "hint err"; hint.textContent = e.message;
+    if (!$("#fUrl").value) $("#fUrl").value = url;
+  } finally { btn.disabled = false; btn.textContent = "Remplir"; }
+}
+
+async function saveRace(orig) {
+  syncFmts();
+  const r = {
+    ...(orig.id ? { id: orig.id } : { created_by: S.me || null }),
+    name: $("#fName").value.trim(), date: $("#fDate").value, location: $("#fLoc").value.trim() || null,
+    signup_close: $("#fClose").value || null, signup_url: $("#fSignup").value.trim() || null,
+    url: $("#fUrl").value.trim() || null, notes: $("#fNotes").value.trim() || null,
+    formats: draftFormats.filter(f => f.label || f.distance).map(f => ({ ...f, label: f.label || `${fmtNum(f.distance)} km` })),
+  };
+  if (!r.name || !r.date) return toast("Le nom et la date sont obligatoires");
+  const btn = $("#saveBtn"); btn.disabled = true;
+  try { await api.saveRace(r); closeSheet(); toast(orig.id ? "Course modifiée" : "Course ajoutée 🎉"); S.tab = "upcoming"; await refresh(); }
+  catch (e) { toast("Erreur : " + e.message.slice(0, 60)); btn.disabled = false; }
+}
+$("#addBtn").onclick = () => openEditor();
+
+/* ---------- export agenda (.ics) ---------- */
+function downloadIcs(r) {
+  const d = r.date.replace(/-/g, ""), next = new Date(parseD(r.date).getTime() + 864e5).toISOString().slice(0, 10).replace(/-/g, "");
+  const mine = S.parts.find(p => p.race_id === r.id && p.member === S.me);
+  const f = r.formats?.find(x => x.id === mine?.format_id);
+  const clean = (s) => String(s || "").replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n");
+  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//NosCourses//FR", "BEGIN:VEVENT",
+    `UID:${r.id}@nos-courses`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`,
+    `DTSTART;VALUE=DATE:${d}`, `DTEND;VALUE=DATE:${next}`,
+    `SUMMARY:${clean(r.name + (f ? " – " + f.label : ""))}`, r.location ? `LOCATION:${clean(r.location)}` : "",
+    `DESCRIPTION:${clean([f?.time && "Départ " + f.time, r.signup_url && "Inscription : " + r.signup_url, r.url].filter(Boolean).join("\n"))}`,
+    "END:VEVENT", "END:VCALENDAR"].filter(Boolean).join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+  a.download = r.name.replace(/[^\w\- ]+/g, "").trim() + ".ics"; a.click();
+}
+
+/* ================== Démarrage ================== */
+(async function start() {
+  await refresh();
+  if (!S.me) askName();
+  // Lien partagé depuis une autre appli (Android : Partager → Nos Courses)
+  const q = new URLSearchParams(location.search);
+  const shared = [q.get("url"), q.get("text"), q.get("title")].filter(Boolean).join(" ").match(/https?:\/\/\S+/)?.[0];
+  if (shared) { history.replaceState(null, "", location.pathname); openEditor(null, shared); }
+  document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && refresh(true));
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+</script>
+</body>
+</html>
