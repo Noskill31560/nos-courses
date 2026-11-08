@@ -123,6 +123,20 @@
   .fmt-edit input{padding:7px 9px}
   .fmt-edit .del{position:absolute;top:4px;right:6px;background:none;border:0;color:var(--mute);font-size:18px}
   .sheet-actions{display:flex;gap:10px;margin-top:18px}.sheet-actions .btn{flex:1;justify-content:center;padding:13px}
+  .crew{border-top:1px solid var(--line)}
+  .crew-row{border-bottom:1px solid var(--line)}
+  .crew-head{display:flex;align-items:center;gap:12px;padding:11px 2px;cursor:pointer}
+  .crew-head .av{width:34px;height:34px;font-size:14px}
+  .crew-name{flex:1;font-weight:600}
+  .crew-name small{color:var(--mute);font-weight:500}
+  .crew-stat{font-size:12.5px;color:var(--mute);font-weight:500}
+  .crew-row .chev{color:var(--mute);font-size:12px;transition:transform .2s}
+  .crew-row.open .chev{transform:rotate(180deg)}
+  .crew-detail{display:none;padding:0 2px 12px 46px}
+  .crew-row.open .crew-detail{display:block}
+  .crew-race{font-size:13px;padding:3px 0}
+  .crew-race b{font-weight:700;display:inline-block;min-width:54px}
+  .crew-race span{color:var(--mute)}
   .menu-item{display:block;width:100%;text-align:left;border:0;background:none;padding:14px 4px;border-bottom:1px solid var(--line);font-weight:500}
   .menu-item.danger{color:#c0392b}
   .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:r .7s linear infinite;display:inline-block}
@@ -171,9 +185,12 @@ const api = ONLINE ? (() => {
   };
   return {
     async load() {
-      const [races, parts] = await Promise.all([req("races?select=*&order=date.asc"), req("participations?select=*")]);
-      return { races, parts };
+      const [races, parts, members] = await Promise.all([req("races?select=*&order=date.asc"), req("participations?select=*"),
+        req("members?select=name").catch(() => [])]);
+      return { races, parts, members: (members || []).map(m => m.name) };
     },
+    touchMember: (name) => req("members?on_conflict=name", { method: "POST", body: JSON.stringify({ name, last_seen: new Date().toISOString() }), headers: { Prefer: "resolution=merge-duplicates" } }).catch(() => {}),
+    renameMember: async (old, name) => { await req(`members?name=eq.${encodeURIComponent(old)}`, { method: "DELETE" }).catch(() => {}); },
     saveRace: (r) => r.id
       ? req(`races?id=eq.${r.id}`, { method: "PATCH", body: JSON.stringify(strip(r)), headers: { Prefer: "return=representation" } })
       : req("races", { method: "POST", body: JSON.stringify(strip(r)), headers: { Prefer: "return=representation" } }),
@@ -196,7 +213,9 @@ const api = ONLINE ? (() => {
   const db = () => LS.get("demo-db", null) || seedDemo();
   const save = (d) => LS.set("demo-db", d);
   return {
-    async load() { return db() },
+    async load() { const d = db(); return { ...d, members: d.members || [] }; },
+    async touchMember(name) { const d = db(); d.members = [...new Set([...(d.members || []), name])]; save(d); },
+    async renameMember(old) { const d = db(); d.members = (d.members || []).filter(m => m !== old); save(d); },
     async saveRace(r) { const d = db(); if (r.id) d.races = d.races.map(x => x.id === r.id ? { ...x, ...r } : x); else d.races.push({ ...r, id: crypto.randomUUID() }); save(d); },
     async deleteRace(id) { const d = db(); d.races = d.races.filter(x => x.id !== id); d.parts = d.parts.filter(p => p.race_id !== id); save(d); },
     async setPart(p) { const d = db(); d.parts = d.parts.filter(x => !(x.race_id === p.race_id && x.member === p.member && x.format_id === p.format_id)); d.parts.push(p); save(d); },
@@ -222,7 +241,7 @@ function seedDemo() {
 }
 
 /* ================== État ================== */
-let S = { races: [], parts: [], tab: "upcoming", open: new Set(), me: LS.get("me", "") };
+let S = { races: [], parts: [], members: [], tab: "upcoming", open: new Set(), me: LS.get("me", "") };
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const today = () => new Date(new Date().toDateString());
@@ -240,7 +259,7 @@ function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.ad
 async function refresh(silent) {
   try {
     const d = await api.load();
-    S.races = d.races || []; S.parts = d.parts || [];
+    S.races = d.races || []; S.parts = d.parts || []; S.members = d.members || [];
     render();
   } catch (e) { if (!silent) toast("Connexion impossible : " + e.message.slice(0, 60)); console.error(e); }
 }
@@ -390,14 +409,52 @@ function askName(then) {
     if (old && old !== v) for (const p of S.parts.filter(p => p.member === old)) {
       try { await api.delPart(p.race_id, old, p.format_id); await api.setPart({ ...p, member: v }); } catch {}
     }
-    if (old !== v) refresh(true);
+    if (old && old !== v) await api.renameMember(old, v);
+    if (old !== v) { await api.touchMember(v); refresh(true); }
     then && then();
   };
   $("#nameOk").onclick = ok;
   $("#nameIn").onkeydown = (e) => { if (e.key === "Enter") ok(); };
   setTimeout(() => $("#nameIn").focus(), 250);
 }
-$("#meBtn").onclick = () => askName();
+$("#meBtn").onclick = () => S.me ? openCrew() : askName();
+
+function crewList() {
+  // tout le monde : membres enregistrés + ceux qui ont déjà suivi une course + créateurs de courses
+  const names = new Set([...S.members, ...S.parts.map(p => p.member), ...S.races.map(r => r.created_by).filter(Boolean)]);
+  if (S.me) names.add(S.me);
+  return [...names].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+}
+
+function openCrew(openName) {
+  const upcomingIds = new Set(S.races.filter(r => days(r.date) >= 0).map(r => r.id));
+  const rows = crewList().map(n => {
+    const ps = S.parts.filter(p => p.member === n && upcomingIds.has(p.race_id));
+    const races = [...new Set(ps.map(p => p.race_id))];
+    const ins = races.filter(id => ps.some(p => p.race_id === id && p.status === "inscrit")).length;
+    const chaud = races.length - ins;
+    const stat = [ins && `${ins} inscrit${ins > 1 ? "s" : ""}`, chaud && `${chaud} chaud${chaud > 1 ? "s" : ""}`].filter(Boolean).join(" · ") || "aucune course prévue";
+    const detail = races.map(id => S.races.find(r => r.id === id)).filter(Boolean).sort((a, b) => a.date.localeCompare(b.date)).map(r => {
+      const fs = ps.filter(p => p.race_id === r.id).map(p => {
+        const f = (r.formats || []).find(x => x.id === p.format_id);
+        return `${esc(f?.label || "?")} ${p.status === "inscrit" ? "✓" : "🔥"}`;
+      }).join(", ");
+      const d = parseD(r.date);
+      return `<div class="crew-race"><b>${d.getDate()} ${MOIS[d.getMonth()]}</b> ${esc(r.name)} <span>${fs}</span></div>`;
+    }).join("");
+    return `<div class="crew-row ${openName === n ? "open" : ""}" data-crew="${esc(n)}">
+      <div class="crew-head">${avatar(n)}<div class="crew-name">${esc(n)}${n === S.me ? ' <small>(toi)</small>' : ""}<div class="crew-stat">${stat}</div></div>${races.length ? '<span class="chev">▼</span>' : ""}</div>
+      ${races.length ? `<div class="crew-detail">${detail}</div>` : ""}
+    </div>`;
+  }).join("");
+  openSheet(`<h3>Le crew <small style="font:600 14px var(--body);color:var(--mute)">${crewList().length} membres</small></h3>
+    <div class="crew">${rows}</div>
+    <div class="sheet-actions"><button class="btn" id="renameBtn">✏️ Changer mon prénom</button><button class="btn primary" id="crewClose">Fermer</button></div>
+    <p class="hint">Touche un membre pour voir ses prochaines courses.</p>`);
+  document.querySelectorAll("[data-crew]").forEach(el => el.querySelector(".crew-head").onclick = () => el.classList.toggle("open"));
+  $("#renameBtn").onclick = () => askName();
+  $("#crewClose").onclick = closeSheet;
+}
 
 function openMenu(id) {
   const r = S.races.find(x => x.id === id);
@@ -537,7 +594,7 @@ function downloadIcs(r) {
 /* ================== Démarrage ================== */
 (async function start() {
   await refresh();
-  if (!S.me) askName();
+  if (!S.me) askName(); else api.touchMember(S.me);
   // Lien partagé depuis une autre appli (Android : Partager → Nos Courses)
   const q = new URLSearchParams(location.search);
   const shared = [q.get("url"), q.get("text"), q.get("title")].filter(Boolean).join(" ").match(/https?:\/\/\S+/)?.[0];
