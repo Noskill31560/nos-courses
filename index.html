@@ -178,8 +178,8 @@ const api = ONLINE ? (() => {
       ? req(`races?id=eq.${r.id}`, { method: "PATCH", body: JSON.stringify(strip(r)), headers: { Prefer: "return=representation" } })
       : req("races", { method: "POST", body: JSON.stringify(strip(r)), headers: { Prefer: "return=representation" } }),
     deleteRace: (id) => req(`races?id=eq.${id}`, { method: "DELETE" }),
-    setPart: (p) => req("participations?on_conflict=race_id,member", { method: "POST", body: JSON.stringify({ ...p, updated_at: new Date().toISOString() }), headers: { Prefer: "resolution=merge-duplicates" } }),
-    delPart: (race_id, member) => req(`participations?race_id=eq.${race_id}&member=eq.${encodeURIComponent(member)}`, { method: "DELETE" }),
+    setPart: (p) => req("participations?on_conflict=race_id,member,format_id", { method: "POST", body: JSON.stringify({ ...p, updated_at: new Date().toISOString() }), headers: { Prefer: "resolution=merge-duplicates" } }),
+    delPart: (race_id, member, format_id) => req(`participations?race_id=eq.${race_id}&member=eq.${encodeURIComponent(member)}&format_id=eq.${encodeURIComponent(format_id)}`, { method: "DELETE" }),
     async importUrl(url) {
       const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 45000);
       let r;
@@ -199,8 +199,8 @@ const api = ONLINE ? (() => {
     async load() { return db() },
     async saveRace(r) { const d = db(); if (r.id) d.races = d.races.map(x => x.id === r.id ? { ...x, ...r } : x); else d.races.push({ ...r, id: crypto.randomUUID() }); save(d); },
     async deleteRace(id) { const d = db(); d.races = d.races.filter(x => x.id !== id); d.parts = d.parts.filter(p => p.race_id !== id); save(d); },
-    async setPart(p) { const d = db(); d.parts = d.parts.filter(x => !(x.race_id === p.race_id && x.member === p.member)); d.parts.push(p); save(d); },
-    async delPart(race_id, member) { const d = db(); d.parts = d.parts.filter(x => !(x.race_id === race_id && x.member === member)); save(d); },
+    async setPart(p) { const d = db(); d.parts = d.parts.filter(x => !(x.race_id === p.race_id && x.member === p.member && x.format_id === p.format_id)); d.parts.push(p); save(d); },
+    async delPart(race_id, member, format_id) { const d = db(); d.parts = d.parts.filter(x => !(x.race_id === race_id && x.member === member && x.format_id === format_id)); save(d); },
     async importUrl() { throw new Error("Remplissage automatique disponible une fois Supabase configuré (voir README).") },
   };
 })();
@@ -291,13 +291,15 @@ function card(r) {
     if (c < 0) badges.push(`<span class="badge closed">Inscriptions closes</span>`);
     else badges.push(`<span class="badge ${c <= 10 ? "warn" : ""}">Clôture ${c === 0 ? "aujourd'hui" : "dans " + c + " j"}</span>`);
   }
-  const nIns = parts.filter(p => p.status === "inscrit").length, nInt = parts.length - nIns;
+  const insSet = new Set(parts.filter(p => p.status === "inscrit").map(p => p.member));
+  const nIns = insSet.size, nInt = new Set(parts.filter(p => !insSet.has(p.member)).map(p => p.member)).size;
   if (parts.length) badges.push(`<span class="badge">${nIns ? nIns + " inscrit" + (nIns > 1 ? "s" : "") : ""}${nIns && nInt ? " · " : ""}${nInt ? nInt + " chaud" + (nInt > 1 ? "s" : "") : ""}</span>`);
 
-  const myPart = parts.find(p => p.member === S.me);
+  const myParts = parts.filter(p => p.member === S.me);
   const dists = (r.formats || []).map(f => {
     const txt = f.distance ? (f.distance >= 1 ? `${fmtNum(f.distance)} km` : `${Math.round(f.distance * 1000)} m`) : f.label;
-    const st = myPart?.format_id === f.id ? (myPart.status === "inscrit" ? "me-ins" : "me-int") : "";
+    const mp = myParts.find(p => p.format_id === f.id);
+    const st = mp ? (mp.status === "inscrit" ? "me-ins" : "me-int") : "";
     return `<span class="dist ${st}">${esc(txt)}${f.elevation ? ` <small style="font-weight:600;opacity:.7">${f.elevation} D+</small>` : ""}</span>`;
   }).join("");
   const fmts = (r.formats?.length ? r.formats : [{ id: "_", label: "Course" }]).map(f => {
@@ -355,16 +357,16 @@ document.addEventListener("click", async (e) => {
 
 async function toggleJoin(raceId, formatId) {
   if (!S.me) return askName(() => toggleJoin(raceId, formatId));
-  const cur = S.parts.find(p => p.race_id === raceId && p.member === S.me);
-  // cycle : rien → chaud → inscrit → rien (changer de format repart à « chaud »)
-  let next = "interesse";
-  if (cur && cur.format_id === formatId) next = cur.status === "interesse" ? "inscrit" : null;
-  S.parts = S.parts.filter(p => !(p.race_id === raceId && p.member === S.me));
+  const mine = (p) => p.race_id === raceId && p.member === S.me && p.format_id === formatId;
+  const cur = S.parts.find(mine);
+  // cycle propre à chaque format : rien → chaud → inscrit → rien (on peut suivre plusieurs formats d'une course)
+  const next = !cur ? "interesse" : cur.status === "interesse" ? "inscrit" : null;
+  S.parts = S.parts.filter(p => !mine(p));
   if (next) S.parts.push({ race_id: raceId, member: S.me, format_id: formatId, status: next });
   render();
   try {
     if (next) await api.setPart({ race_id: raceId, member: S.me, format_id: formatId, status: next });
-    else await api.delPart(raceId, S.me);
+    else await api.delPart(raceId, S.me, formatId);
     if (next === "inscrit") toast("Inscrit, bonne course ! 🏃");
   } catch (err) { toast("Non enregistré : " + err.message.slice(0, 50)); refresh(true); }
 }
@@ -386,7 +388,7 @@ function askName(then) {
     S.me = v; LS.set("me", v); closeSheet(); render();
     // renommage : on transfère les participations existantes
     if (old && old !== v) for (const p of S.parts.filter(p => p.member === old)) {
-      try { await api.delPart(p.race_id, old); await api.setPart({ ...p, member: v }); } catch {}
+      try { await api.delPart(p.race_id, old, p.format_id); await api.setPart({ ...p, member: v }); } catch {}
     }
     if (old !== v) refresh(true);
     then && then();
@@ -518,8 +520,8 @@ $("#addBtn").onclick = () => openEditor();
 /* ---------- export agenda (.ics) ---------- */
 function downloadIcs(r) {
   const d = r.date.replace(/-/g, ""), next = new Date(parseD(r.date).getTime() + 864e5).toISOString().slice(0, 10).replace(/-/g, "");
-  const mine = S.parts.find(p => p.race_id === r.id && p.member === S.me);
-  const f = r.formats?.find(x => x.id === mine?.format_id);
+  const myF = S.parts.filter(p => p.race_id === r.id && p.member === S.me).sort((a, b) => (a.status === "inscrit" ? -1 : 1));
+  const f = r.formats?.find(x => x.id === myF[0]?.format_id);
   const clean = (s) => String(s || "").replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n");
   const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//NosCourses//FR", "BEGIN:VEVENT",
     `UID:${r.id}@nos-courses`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`,
