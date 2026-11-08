@@ -487,7 +487,7 @@ async function doImport() {
     d.formats = kept;
     const missing = [!d.date && "date", !d.formats?.length && "formats", !d.signup_url && "lien d'inscription"].filter(Boolean);
     hint.className = "hint ok";
-    hint.textContent = "✓ Infos récupérées" + (d.source === "ia" ? " par l'IA" : "") + (removed ? ` · ${removed} course${removed > 1 ? "s" : ""} enfants retirée${removed > 1 ? "s" : ""}` : "") + (missing.length ? ` (à compléter : ${missing.join(", ")})` : ". Vérifie puis enregistre.")
+    hint.textContent = "✓ Infos récupérées" + (d.source === "ia" ? " par l'IA" : "") + (d.signup_read ? " + page d'inscription" : "") + (removed ? ` · ${removed} course${removed > 1 ? "s" : ""} enfants retirée${removed > 1 ? "s" : ""}` : "") + (missing.length ? ` (à compléter : ${missing.join(", ")})` : ". Vérifie puis enregistre.")
       + (d.ai_error ? ` · IA non utilisée : ${d.ai_error}` : "");
   } catch (e) {
     hint.className = "hint err"; hint.textContent = e.message;
