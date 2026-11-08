@@ -388,7 +388,7 @@ function askName(then) {
     then && then();
   };
   $("#nameOk").onclick = ok;
-  $("#nameIn").onkeydown = (e) => e.key === "Enter" && ok();
+  $("#nameIn").onkeydown = (e) => { if (e.key === "Enter") ok(); };
   setTimeout(() => $("#nameIn").focus(), 250);
 }
 $("#meBtn").onclick = () => askName();
